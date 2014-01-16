@@ -143,9 +143,9 @@ class TypeChecker(object):
 
     def visit_BinExpr(self, node, tab):
         try:
-            type1 = self.dispatch(node.left)
-            type2 = self.dispatch(node.right)
-            op = node.op;
+            type1 = self.dispatch(node.expr1)
+            type2 = self.dispatch(node.expr2)
+            op = node.operator;
             return ttype[op][type1][type2]
         except KeyError:
             print "Incompatible types in line", node.line
