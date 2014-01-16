@@ -2,12 +2,6 @@ class Node(object):
     def __str__(self):
         return self.printTree()
         
-class Variable(Node):
-    def __init__(self, type, name, value):
-        self.type = type
-        self.name = name
-        self.value = value
-        
 class Program(Node):
     def __init__(self, declarations, fundefs, instructions):
         self.declarations = declarations
