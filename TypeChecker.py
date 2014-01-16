@@ -39,9 +39,9 @@ class TypeChecker(object):
 
 
     def visit_BinExpr(self, node):
-        type1 = self.dispatch(node.left)
-        type2 = self.dispatch(node.right)
-        op    = node.op;
+        type1 = self.dispatch(node.expr1)
+        type2 = self.dispatch(node.expr2)
+        operator = node.operator;
         # ... 
         #
  
