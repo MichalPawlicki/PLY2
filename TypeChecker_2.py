@@ -56,11 +56,11 @@ class TypeChecker(object):
         return meth(node, *args)
     
     def findVariable(self, tab, variable):
-        print "finding:", variable, "in:", tab.symbols
+        #print "finding:", variable, "in:", tab.symbols
         if tab.symbols.has_key(variable):
             return tab.get(variable)
         elif tab.symbol.name == variable:
-            print "Returning function symbol of type", tab.symbol.type
+            #print "Returning function symbol of type", tab.symbol.type
             return tab.symbol
         elif tab.getParentScope() != None:
             return self.findVariable(tab.getParentScope(), variable)
@@ -85,7 +85,7 @@ class TypeChecker(object):
             self.dispatch(init, tab, type)
 
     def visit_Init(self, node, tab, type):
-        print "init:", node.id, type
+        #print "init:", node.id, type
         errorOccured = False
         for symbol in tab.symbols:
             if symbol == node.id:
@@ -116,7 +116,7 @@ class TypeChecker(object):
         else:
             valueType = self.dispatch(node.expression, tab)
             if not ttype["="][variable.type].has_key(valueType):
-                print variable.name, variable.type
+                #print variable.name, variable.type
                 print "Value of type {0} cannot be assigned to symbol {1} of type {2} (line {3})".format(valueType, node.id, variable.type, node.line)
             else:
                 return ttype["="][variable.type][valueType]
@@ -171,7 +171,7 @@ class TypeChecker(object):
                 or 'string'
 
     def visit_Id(self, node, tab):
-        print "ID:", node.id
+        #print "ID:", node.id
         variable = self.findVariable(tab, node.id)
         if variable == None:
             print "Symbol {0} in line {1} not declared before".format(node.id, node.line)
@@ -183,7 +183,7 @@ class TypeChecker(object):
             type1 = self.dispatch(node.expr1, tab)
             type2 = self.dispatch(node.expr2, tab)
             op = node.operator;
-            print type1, type2, op
+            #print type1, type2, op
             return ttype[op][type1][type2]
         except KeyError:
             print "Incompatible types in line", node.line
@@ -222,7 +222,7 @@ class TypeChecker(object):
             self.dispatch(arg, tab)
 
     def visit_Argument(self, node, tab):
-        print "fun args:", node.id, node.type
+        #print "fun args:", node.id, node.type
         errorOccured = False
         for symbol in tab.symbols:
             if symbol == node.id:
