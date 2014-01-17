@@ -14,9 +14,9 @@ class VariableSymbol(Symbol):
 
 class SymbolTable(object):
 
-    def __init__(self, parent, name):
+    def __init__(self, parent, name, type):
         self.parent = parent
-        self.name = name
+        self.symbol = Symbol(name, type)
         self.symbols = {}
 
     def put(self, name, symbol):

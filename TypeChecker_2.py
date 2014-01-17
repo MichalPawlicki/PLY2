@@ -2,6 +2,7 @@
 
 from SymbolTable import VariableSymbol
 from SymbolTable import SymbolTable
+from SymbolTable import Symbol
 
 ttype = {}
 arithm_ops = [ '+', '-', '*', '/', '%' ]
@@ -58,13 +59,16 @@ class TypeChecker(object):
         print "finding:", variable, "in:", tab.symbols
         if tab.symbols.has_key(variable):
             return tab.get(variable)
+        elif tab.symbol.name == variable:
+            print "Returning function symbol of type", tab.symbol.type
+            return tab.symbol
         elif tab.getParentScope() != None:
             return self.findVariable(tab.getParentScope(), variable)
         else:
             return None
 
     def visit_Program(self, node):
-        tab = SymbolTable(None, "program")
+        tab = SymbolTable(None, "program", None)
         self.dispatch(node.declarations, tab)
         self.dispatch(node.fundefs, tab)
         self.dispatch(node.instructions, tab)
@@ -112,7 +116,10 @@ class TypeChecker(object):
         else:
             valueType = self.dispatch(node.expression, tab)
             if not ttype["="][variable.type].has_key(valueType):
+                print variable.name, variable.type
                 print "Value of type {0} cannot be assigned to symbol {1} of type {2} (line {3})".format(valueType, node.id, variable.type, node.line)
+            else:
+                return ttype["="][variable.type][valueType]
         
     def visit_Choice(self, node, tab):
         self.dispatch(node._if, tab)
@@ -142,11 +149,14 @@ class TypeChecker(object):
     def visit_Break(self, node, tab):
         pass
 
-    def visit_Compound(self, node, tab):
-        #TODO
-        self.dispatch(node.declarations, tab)
-        self.dispatch(node.instructions, tab)
-        #TODO
+    def visit_Compound(self, node, tab, *args):
+        if len(args) > 0 and args[0] is True:
+            self.dispatch(node.declarations, tab)
+            self.dispatch(node.instructions, tab)
+        else:
+            new_tab = SymbolTable(tab, None, None)
+            self.dispatch(node.declarations, new_tab)
+            self.dispatch(node.instructions, new_tab)
         
     def visit_Condition(self, node, tab):
         pass
@@ -161,10 +171,12 @@ class TypeChecker(object):
                 or 'string'
 
     def visit_Id(self, node, tab):
+        print "ID:", node.id
         variable = self.findVariable(tab, node.id)
         if variable == None:
             print "Symbol {0} in line {1} not declared before".format(node.id, node.line)
-        return variable.type
+        else:
+            return variable.type
 
     def visit_BinExpr(self, node, tab):
         try:
@@ -188,7 +200,9 @@ class TypeChecker(object):
         variable = self.findVariable(tab, node.id)
         if variable == None:
             print "Symbol {0} in line {1} not declared before".format(node.id, node.line)
-        self.dispatch(node.expression_list, tab)
+        else:
+            self.dispatch(node.expression_list, tab)
+            return variable.type
 
     def visit_ExpressionList(self, node, tab):
         for expression in node.expressions:
@@ -199,10 +213,9 @@ class TypeChecker(object):
             self.dispatch(fundef, tab)
 
     def visit_FunctionDefinition(self, node, tab):
-        #TODO
-        self.dispatch(node.arglist, tab)
-        self.dispatch(node.compound_instr, tab)
-        #TODO
+        new_tab = SymbolTable(tab, node.id, node.type)
+        self.dispatch(node.arglist, new_tab)
+        self.dispatch(node.compound_instr, new_tab, True)
     
     def visit_ArgumentList(self, node, tab):
         for arg in node.arg_list:
@@ -218,4 +231,5 @@ class TypeChecker(object):
                 #raise DuplicatedSymbolError
         if not errorOccured:
             tab.put(node.id, VariableSymbol(node.id, node.type, None))
+            return node.type
     
