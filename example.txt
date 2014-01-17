@@ -11,7 +11,7 @@ int gcd(int m, int n) {
 	    repeat {
 	        m = 2 * n;
 	        n = 6 * m;
-	    } until ((n > "666") || (m ^ 101001));
+	    } until ((n > 666) || (m ^ 101001));
 	}
 	else
 	    res = m;

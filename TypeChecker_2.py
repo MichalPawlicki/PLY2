@@ -166,9 +166,17 @@ class TypeChecker(object):
 
     def visit_Const(self, node, tab):
         value = node.value
-        return (type(value) is int and 'int') or \
-                (type(value) is float and 'float') \
-                or 'string'
+        if (value[0] == '"' or value[0] == "'") and (value[len(value) - 1] == '"' or value[len(value) - 1] == "'"):
+            return 'string'
+        try:
+            int(value)
+            return 'int'
+        except ValueError:
+            try:
+                float(value)
+                return 'float'
+            except ValueError:
+                print "Value's {0} type is not recognized".format(value)
 
     def visit_Id(self, node, tab):
         #print "ID:", node.id
