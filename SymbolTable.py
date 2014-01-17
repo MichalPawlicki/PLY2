@@ -9,7 +9,7 @@ class Symbol(object):
 class VariableSymbol(Symbol):
 
     def __init__(self, name, type, value):
-        self(name, type)
+        super(VariableSymbol, self).__init__(name, type)
         self.value = value
 
 class SymbolTable(object):
