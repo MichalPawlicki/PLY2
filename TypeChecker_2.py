@@ -118,7 +118,7 @@ class TypeChecker(object):
         errorOccured = False
         for symbol in tab.symbols:
             if symbol == node.id:
-                print "Duplicated usage of symbol {0} in line {1}".format(node.id, node.line)
+                print "line {1}: Duplicated usage of symbol {0}".format(node.id, node.line)
                 errorOccured = True
                 #raise DuplicatedSymbolError
         if not errorOccured:        
@@ -143,12 +143,12 @@ class TypeChecker(object):
         #print "assignment:", node.id, tab.symbols
         variable = self.findVariable(tab, node.id)
         if variable == None:
-            print "Symbol {0} in line {1} not defined before".format(node.id, node.line)
+            print "line {1}: Symbol {0} not defined before".format(node.id, node.line)
         else:
             valueType = self.dispatch(node.expression, tab)
             if not ttype["="][variable.type].has_key(valueType):
                 #print variable.name, variable.type
-                print "Value of type {0} cannot be assigned to symbol {1} of type {2} (line {3})".format(valueType, node.id, variable.type, node.line)
+                print "line {3}: Value of type {0} cannot be assigned to symbol {1} of type {2}".format(valueType, node.id, variable.type, node.line)
             else:
                 return ttype["="][variable.type][valueType]
         
@@ -208,14 +208,14 @@ class TypeChecker(object):
                     float(value)
                     type = 'float'
                 except ValueError:
-                    print "Value's {0} type in line {1} is not recognized".format(value, node.line)
+                    print "line {1}: Value's {0} type is not recognized".format(value, node.line)
         return type
 
     def visit_Id(self, node, tab):
         #print "ID:", node.id
         variable = self.findVariable(tab, node.id)
         if variable == None:
-            print "Symbol {0} in line {1} not declared before".format(node.id, node.line)
+            print "line {1}: Symbol {0} not declared before".format(node.id, node.line)
         else:
             return variable.type
 
@@ -228,7 +228,7 @@ class TypeChecker(object):
             #print type1, type2, op
             return type
         except KeyError:
-            print "Incompatible expression types in line", node.line
+            print "line {1}: Incompatible expression types".format(node.line)
             #raise IncompatibleTypesError
         except IncompatibleTypesError:
             pass
@@ -244,25 +244,25 @@ class TypeChecker(object):
         variable = self.findVariable(tab, node.id)
         #print variable.name, variable.type
         if variable == None:
-            print "Symbol {0} in line {1} not declared before".format(node.id, node.line)
+            print "line {1}: Symbol {0} not declared before".format(node.id, node.line)
             return None
         if type(variable) is not SymbolTable:
-            print "Symbol {0} in line {1} is not a function id".format(node.id, node.line)
+            print "line {1}: {0} is not a function".format(node.id, node.line)
             return None
         #print "id with parentheses:", node.id, tab.symbols
         funcall_argtypes = self.dispatch(node.expression_list, tab)
         declared_fun_args = self.getFunArgs(tab, node.id)
         if len(funcall_argtypes) != len(declared_fun_args):
-            print "Function {0} takes {1} arguments, but {2} are supplied (line {3})".format( \
+            print "line {3}: Function {0} takes {1} arguments, but {2} are supplied".format( \
                     node.id, len(declared_fun_args), len(funcall_argtypes), node.line)
             return None
         for argumentSymbol in declared_fun_args.values():
             corresponding_funcall_argtype = funcall_argtypes[argumentSymbol.position]
             if not ttype['='][argumentSymbol.type].has_key(corresponding_funcall_argtype):
-                print "Function {0}, argument {1}: cannot convert actual argument type " \
+                print "line {4}: Function {0}, argument {1}: cannot convert actual argument type " \
                         "({2}) to required type ({3})".format( \
                         node.id, argumentSymbol.position, \
-                        corresponding_funcall_argtype, argumentSymbol.type)
+                        corresponding_funcall_argtype, argumentSymbol.type, node.line)
         return variable.type
 
         #if len(args) == 2:
@@ -305,7 +305,7 @@ class TypeChecker(object):
         errorOccured = False
         for symbol in tab.symbols:
             if symbol == node.id:
-                print "Duplicated usage of symbol {0} in line {1}".format(node.id, node.line)
+                print "line {1}: Duplicated usage of symbol {0}".format(node.id, node.line)
                 errorOccured = True
                 #raise DuplicatedSymbolError
         if not errorOccured:
