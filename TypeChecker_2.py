@@ -230,7 +230,7 @@ class TypeChecker(object):
             #print type1, type2, op
             return type
         except KeyError:
-            print "line {1}: Incompatible expression types".format(node.line)
+            print "line {0}: Incompatible expression types".format(node.line)
             #raise IncompatibleTypesError
         except IncompatibleTypesError:
             pass

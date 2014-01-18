@@ -19,5 +19,9 @@ if __name__ == '__main__':
     ast = parser.parse(text, lexer=Cparser.scanner)
     if ast == None:
         sys.exit(-1)
-    ast.printTree(0)
-    TypeChecker().dispatch(ast)
+
+    try:
+        ast.printTree(0)
+        TypeChecker().dispatch(ast)
+    except Exception:
+        print "Error while printing tree or performing type-check caused by previous syntax errors."

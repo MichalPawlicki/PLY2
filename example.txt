@@ -7,6 +7,10 @@ int foo(int a, string b){
 	print "ola";
 }
 
+int fff() {
+	return 650;
+}
+
 int gcd(int m, float n) {
 	float res = 0;
 	c = 6;
@@ -15,6 +19,8 @@ int gcd(int m, float n) {
         d = 4.234234;
         d = gcd("aaa", "bbb");
         d = res(5);
+        c = fff();
+        c = fff(324234, "bbb");
 	if (m!=n) { 
 	    if (m > n) 
 	        res = gcd(foo(5, "ala"), 5.0, 4);
@@ -38,6 +44,7 @@ int gcd(int m, float n) {
                 liczba = 5;
 	}
         liczba = 500;
+        res = ("aaa" + 66) / "fff";
 	print "ala";
 	print (res);
 	return res;
