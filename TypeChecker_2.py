@@ -85,7 +85,16 @@ class TypeChecker(object):
                         #print "found in parent scope"
                         return tab.getParentScope().get(fun).funargs[funarg]
         return self.findFunArg(tab.getParentScope(), fun, position)
-            
+    
+    def getFunArgs(self, tab, fun):
+        if tab.name == fun:
+            return tab.funargs
+        if tab.getParentScope() == None:
+            return None
+        if tab.getParentScope().symbols.has_key(fun):
+            if tab.getParentScope().get(fun).name == fun:
+                return tab.getParentScope().get(fun).funargs
+        return self.getFunArgs(tab.getParentScope(), fun) 
 
     def visit_Program(self, node):
         tab = SymbolTable(None, "program", None)
@@ -272,27 +281,46 @@ class TypeChecker(object):
         #print variable.name, variable.type
         if variable == None:
             print "Symbol {0} in line {1} not declared before".format(node.id, node.line)
-        else:
-            #print "id with parentheses:", node.id, tab.symbols
-            self.dispatch(node.expression_list, tab, node.id)
-            if len(args) == 2:
-                #print "id with parentheses:", args[0], args[1], tab.symbols
-                argument = self.findFunArg(tab, args[0], args[1])
-                #print argument.type
-                if argument == None:
-                    print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
-                elif argument.type != variable.type:
-                    if argument.type != 'float' or variable.type != 'int':
-                        print "Function call return type {0} in line {1} is not compatible with function's {2} declared: {3} {4}".format(variable.type, node.line, args[0], argument.type, argument.name)
-            return variable.type
+            return None
+        if type(variable) is not SymbolTable:
+            print "Symbol {0} in line {1} is not a function id".format(node.id, node.line)
+            return None
+        #print "id with parentheses:", node.id, tab.symbols
+        funcall_argtypes = self.dispatch(node.expression_list, tab)
+        declared_fun_args = self.getFunArgs(tab, node.id)
+        if len(funcall_argtypes) != len(declared_fun_args):
+            print "Function {0} takes {1} arguments, but {2} are supplied (line {3})".format( \
+                    node.id, len(declared_fun_args), len(funcall_argtypes), node.line)
+            return None
+        for argumentSymbol in declared_fun_args.values():
+            corresponding_funcall_argtype = funcall_argtypes[argumentSymbol.position]
+            if not ttype['='][argumentSymbol.type].has_key(corresponding_funcall_argtype):
+                print "Function {0}, argument {1}: cannot convert actual argument type " \
+                        "({2}) to required type ({3})".format( \
+                        node.id, argumentSymbol.position, \
+                        corresponding_funcall_argtype, argumentSymbol.type)
+        return variable.type
+
+        #if len(args) == 2:
+            #print "id with parentheses:", args[0], args[1], tab.symbols
+            #argument = self.findFunArg(tab, args[0], args[1])
+            #print argument.type
+            #if argument == None:
+                #print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
+            #elif argument.type != variable.type:
+                #if argument.type != 'float' or variable.type != 'int':
+                    #print "Function call return type {0} in line {1} is not compatible with function's {2} declared: {3} {4}".format(variable.type, node.line, args[0], argument.type, argument.name)
+        #return variable.type
 
     def visit_ExpressionList(self, node, tab, *args):
-        for expression in node.expressions:
-            if len(args) > 0:
+        expressions = node.expressions
+        return map(lambda expression: self.dispatch(expression, tab), expressions)
+        #for expression in node.expressions:
+            #if len(args) > 0:
                 #print args[0], node.expressions.index(expression)
-                self.dispatch(expression, tab, args[0], node.expressions.index(expression))
-            else:
-                self.dispatch(expression, tab)
+                #self.dispatch(expression, tab, args[0], node.expressions.index(expression))
+            #else:
+                #self.dispatch(expression, tab)
 
     def visit_FunctionDefinitions(self, node, tab):
         for fundef in node.fundefs:
