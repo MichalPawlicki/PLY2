@@ -154,7 +154,7 @@ class TypeChecker(object):
         
     def visit_Choice(self, node, tab):
         self.dispatch(node._if, tab)
-        self.dispatch(node._if, tab)
+        self.dispatch(node._else, tab)
 
     def visit_If(self, node, tab):
         self.dispatch(node.cond, tab)
