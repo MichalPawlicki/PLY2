@@ -1,8 +1,6 @@
 #!/usr/bin/python
 
-from SymbolTable import VariableSymbol
-from SymbolTable import SymbolTable
-from SymbolTable import Symbol
+from SymbolTable import *
 
 ttype = {}
 arithm_ops = [ '+', '-', '*', '/', '%' ]
@@ -59,13 +57,35 @@ class TypeChecker(object):
         #print "finding:", variable, "in:", tab.symbols
         if tab.symbols.has_key(variable):
             return tab.get(variable)
-        elif tab.symbol.name == variable:
-            #print "Returning function symbol of type", tab.symbol.type
-            return tab.symbol
+        elif tab.funargs.has_key(variable):
+            return tab.funargs[variable]
+        elif tab.name == variable:
+            return tab
         elif tab.getParentScope() != None:
             return self.findVariable(tab.getParentScope(), variable)
         else:
             return None
+        
+    def findFunArg(self, tab, fun, position):
+        #print "searching for", fun, position, "in", tab.symbols
+        #print tab.symbol.name, fun
+        if tab.name == fun:
+            for funarg in tab.funargs:
+                if tab.funargs[funarg].position == position:
+                    #print "found as current tab name"
+                    return tab.funargs[funarg]
+        if tab.getParentScope() == None:
+            #print "no parent scope"
+            return None
+        #print "searching for", fun, position, "in parent scope", tab.getParentScope().symbols
+        if tab.getParentScope().symbols.has_key(fun):
+            if tab.getParentScope().get(fun).name == fun:
+                for funarg in tab.getParentScope().get(fun).funargs:
+                    if tab.getParentScope().get(fun).funargs[funarg].position == position:
+                        #print "found in parent scope"
+                        return tab.getParentScope().get(fun).funargs[funarg]
+        return self.findFunArg(tab.getParentScope(), fun, position)
+            
 
     def visit_Program(self, node):
         tab = SymbolTable(None, "program", None)
@@ -94,6 +114,7 @@ class TypeChecker(object):
                 #raise DuplicatedSymbolError
         if not errorOccured:        
             tab.put(node.id, VariableSymbol(node.id, type, node.expression))
+        #print "init:", tab.symbols
         
 
     def visit_Instructions(self, node, tab):
@@ -110,6 +131,7 @@ class TypeChecker(object):
         self.dispatch(node.instruction, tab)
         
     def visit_Assignment(self, node, tab):
+        #print "assignment:", node.id, tab.symbols
         variable = self.findVariable(tab, node.id)
         if variable == None:
             print "Symbol {0} in line {1} not defined before".format(node.id, node.line)
@@ -164,57 +186,113 @@ class TypeChecker(object):
     def visit_Expression(self, node, tab):
         pass
 
-    def visit_Const(self, node, tab):
+    def visit_Const(self, node, tab, *args):
         value = node.value
-        if (value[0] == '"' or value[0] == "'") and (value[len(value) - 1] == '"' or value[len(value) - 1] == "'"):
-            return 'string'
-        try:
-            int(value)
-            return 'int'
-        except ValueError:
+        if value[0] == '"' and value[len(value) - 1] == '"':
+            type = 'string'
+        else:
             try:
-                float(value)
-                return 'float'
+                int(value)
+                type = 'int'
             except ValueError:
-                print "Value's {0} type is not recognized".format(value)
+                try:
+                    float(value)
+                    type = 'float'
+                except ValueError:
+                    print "Value's {0} type in line {1} is not recognized".format(value, node.line)
+        if len(args) == 2:
+            #print "const:", args[0], args[1], tab.symbols
+            argument = self.findFunArg(tab, args[0], args[1])
+            #print argument.name
+            if argument == None:
+                print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
+            elif argument.type != type:
+                if argument.type != 'float' or type != 'int':
+                    print "Value's {0} type in line {1} is not compatible with function's {2} declared: {3} {4}".format(value, node.line, args[0], argument.type, argument.name)
+        return type
 
-    def visit_Id(self, node, tab):
+    def visit_Id(self, node, tab, *args):
         #print "ID:", node.id
         variable = self.findVariable(tab, node.id)
         if variable == None:
             print "Symbol {0} in line {1} not declared before".format(node.id, node.line)
         else:
+            if len(args) == 2:
+                #print "id:", args[0], args[1], tab.symbols
+                argument = self.findFunArg(tab, args[0], args[1])
+                #print "id:", argument.name, argument.type, variable.type
+                if argument == None:
+                    print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
+                elif argument.type != variable.type:
+                    if argument.type != 'float' or variable.type != 'int':
+                        print "Variable's {0} type {1} in line {2} is not compatible with function's {3} declared: {4} {5}".format(variable.name, variable.type, node.line, args[0], argument.type, argument.name)
             return variable.type
 
-    def visit_BinExpr(self, node, tab):
+    def visit_BinExpr(self, node, tab, *args):
         try:
             type1 = self.dispatch(node.expr1, tab)
             type2 = self.dispatch(node.expr2, tab)
             op = node.operator;
+            type = ttype[op][type1][type2]
             #print type1, type2, op
-            return ttype[op][type1][type2]
+            if len(args) == 2:
+                #print "binexpr:", args[0], args[1], tab.symbols
+                argument = self.findFunArg(tab, args[0], args[1])
+                #print argument.name
+                if argument == None:
+                    print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
+                elif argument.type != type:
+                    if argument.type != 'float' or type != 'int':
+                        print "Expression's type {0} in line {1} is not compatible with function's {2} declared: {3} {4}".format(type, node.line, args[0], argument.type, argument.name)
+            return type
         except KeyError:
-            print "Incompatible types in line", node.line
+            print "Incompatible expression types in line", node.line
             #raise IncompatibleTypesError
         except IncompatibleTypesError:
             pass
             #raise IncompatibleTypesError
 
-    def visit_ExpressionInParentheses(self, node, tab):
+    def visit_ExpressionInParentheses(self, node, tab, *args):
         expression = node.expression
-        return self.dispatch(expression, tab)
+        type = self.dispatch(expression, tab)
+        if len(args) == 2:
+            #print "expression in parentheses:", args[0], args[1], tab.symbols
+            argument = self.findFunArg(tab, args[0], args[1])
+            #print argument.name
+            if argument == None:
+                print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
+            elif argument.type != type:
+                if argument.type != 'float' or type != 'int':
+                    print "Complex expression's type {0} in line {1} is not compatible with function's {2} declared: {3} {4}".format(type, node.line, args[0], argument.type, argument.name)
+        return type
     
-    def visit_IdWithParentheses(self, node, tab):
+    def visit_IdWithParentheses(self, node, tab, *args):
+        #print tab.symbols
         variable = self.findVariable(tab, node.id)
+        #print variable.name, variable.type
         if variable == None:
             print "Symbol {0} in line {1} not declared before".format(node.id, node.line)
         else:
-            self.dispatch(node.expression_list, tab)
+            #print "id with parentheses:", node.id, tab.symbols
+            self.dispatch(node.expression_list, tab, node.id)
+            if len(args) == 2:
+                #print "id with parentheses:", args[0], args[1], tab.symbols
+                argument = self.findFunArg(tab, args[0], args[1])
+                #print argument.type
+                if argument == None:
+                    print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
+                elif argument.type != variable.type:
+                    if argument.type != 'float' or variable.type != 'int':
+                        print "Function call return type {0} in line {1} is not compatible with function's {2} declared: {3} {4}".format(variable.type, node.line, args[0], argument.type, argument.name)
             return variable.type
 
-    def visit_ExpressionList(self, node, tab):
+    def visit_ExpressionList(self, node, tab, *args):
         for expression in node.expressions:
-            self.dispatch(expression, tab)
+            if len(args) > 0:
+                #print args[0], node.expressions.index(expression)
+                self.dispatch(expression, tab, args[0], node.expressions.index(expression))
+            else:
+                self.dispatch(expression, tab)
 
     def visit_FunctionDefinitions(self, node, tab):
         for fundef in node.fundefs:
@@ -222,14 +300,15 @@ class TypeChecker(object):
 
     def visit_FunctionDefinition(self, node, tab):
         new_tab = SymbolTable(tab, node.id, node.type)
+        tab.put(node.id, new_tab)
         self.dispatch(node.arglist, new_tab)
         self.dispatch(node.compound_instr, new_tab, True)
     
     def visit_ArgumentList(self, node, tab):
         for arg in node.arg_list:
-            self.dispatch(arg, tab)
+            self.dispatch(arg, tab, node.arg_list.index(arg))
 
-    def visit_Argument(self, node, tab):
+    def visit_Argument(self, node, tab, position):
         #print "fun args:", node.id, node.type
         errorOccured = False
         for symbol in tab.symbols:
@@ -238,6 +317,7 @@ class TypeChecker(object):
                 errorOccured = True
                 #raise DuplicatedSymbolError
         if not errorOccured:
-            tab.put(node.id, VariableSymbol(node.id, node.type, None))
+            #tab.put(node.id, VariableSymbol(node.id, node.type, None))
+            tab.funargs[node.id] = ArgumentSymbol(node.id, node.type, position)
             return node.type
     
