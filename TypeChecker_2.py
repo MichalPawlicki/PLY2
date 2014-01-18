@@ -269,26 +269,9 @@ class TypeChecker(object):
                         corresponding_funcall_argtype, argumentSymbol.type, node.line)
         return variable.type
 
-        #if len(args) == 2:
-            #print "id with parentheses:", args[0], args[1], tab.symbols
-            #argument = self.findFunArg(tab, args[0], args[1])
-            #print argument.type
-            #if argument == None:
-                #print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
-            #elif argument.type != variable.type:
-                #if argument.type != 'float' or variable.type != 'int':
-                    #print "Function call return type {0} in line {1} is not compatible with function's {2} declared: {3} {4}".format(variable.type, node.line, args[0], argument.type, argument.name)
-        #return variable.type
-
     def visit_ExpressionList(self, node, tab):
         expressions = node.expressions
         return map(lambda expression: self.dispatch(expression, tab), expressions)
-        #for expression in node.expressions:
-            #if len(args) > 0:
-                #print args[0], node.expressions.index(expression)
-                #self.dispatch(expression, tab, args[0], node.expressions.index(expression))
-            #else:
-                #self.dispatch(expression, tab)
 
     def visit_FunctionDefinitions(self, node, tab):
         for fundef in node.fundefs:
