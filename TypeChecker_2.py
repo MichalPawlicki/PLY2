@@ -195,7 +195,7 @@ class TypeChecker(object):
     def visit_Expression(self, node, tab):
         pass
 
-    def visit_Const(self, node, tab, *args):
+    def visit_Const(self, node, tab):
         value = node.value
         if value[0] == '"' and value[len(value) - 1] == '"':
             type = 'string'
@@ -209,50 +209,23 @@ class TypeChecker(object):
                     type = 'float'
                 except ValueError:
                     print "Value's {0} type in line {1} is not recognized".format(value, node.line)
-        if len(args) == 2:
-            #print "const:", args[0], args[1], tab.symbols
-            argument = self.findFunArg(tab, args[0], args[1])
-            #print argument.name
-            if argument == None:
-                print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
-            elif argument.type != type:
-                if argument.type != 'float' or type != 'int':
-                    print "Value's {0} type in line {1} is not compatible with function's {2} declared: {3} {4}".format(value, node.line, args[0], argument.type, argument.name)
         return type
 
-    def visit_Id(self, node, tab, *args):
+    def visit_Id(self, node, tab):
         #print "ID:", node.id
         variable = self.findVariable(tab, node.id)
         if variable == None:
             print "Symbol {0} in line {1} not declared before".format(node.id, node.line)
         else:
-            if len(args) == 2:
-                #print "id:", args[0], args[1], tab.symbols
-                argument = self.findFunArg(tab, args[0], args[1])
-                #print "id:", argument.name, argument.type, variable.type
-                if argument == None:
-                    print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
-                elif argument.type != variable.type:
-                    if argument.type != 'float' or variable.type != 'int':
-                        print "Variable's {0} type {1} in line {2} is not compatible with function's {3} declared: {4} {5}".format(variable.name, variable.type, node.line, args[0], argument.type, argument.name)
             return variable.type
 
-    def visit_BinExpr(self, node, tab, *args):
+    def visit_BinExpr(self, node, tab):
         try:
             type1 = self.dispatch(node.expr1, tab)
             type2 = self.dispatch(node.expr2, tab)
             op = node.operator;
             type = ttype[op][type1][type2]
             #print type1, type2, op
-            if len(args) == 2:
-                #print "binexpr:", args[0], args[1], tab.symbols
-                argument = self.findFunArg(tab, args[0], args[1])
-                #print argument.name
-                if argument == None:
-                    print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
-                elif argument.type != type:
-                    if argument.type != 'float' or type != 'int':
-                        print "Expression's type {0} in line {1} is not compatible with function's {2} declared: {3} {4}".format(type, node.line, args[0], argument.type, argument.name)
             return type
         except KeyError:
             print "Incompatible expression types in line", node.line
@@ -261,21 +234,12 @@ class TypeChecker(object):
             pass
             #raise IncompatibleTypesError
 
-    def visit_ExpressionInParentheses(self, node, tab, *args):
+    def visit_ExpressionInParentheses(self, node, tab):
         expression = node.expression
         type = self.dispatch(expression, tab)
-        if len(args) == 2:
-            #print "expression in parentheses:", args[0], args[1], tab.symbols
-            argument = self.findFunArg(tab, args[0], args[1])
-            #print argument.name
-            if argument == None:
-                print "Too many arguments provided to function {0} in line {1}".format(args[0], node.line)
-            elif argument.type != type:
-                if argument.type != 'float' or type != 'int':
-                    print "Complex expression's type {0} in line {1} is not compatible with function's {2} declared: {3} {4}".format(type, node.line, args[0], argument.type, argument.name)
         return type
     
-    def visit_IdWithParentheses(self, node, tab, *args):
+    def visit_IdWithParentheses(self, node, tab):
         #print tab.symbols
         variable = self.findVariable(tab, node.id)
         #print variable.name, variable.type
@@ -312,7 +276,7 @@ class TypeChecker(object):
                     #print "Function call return type {0} in line {1} is not compatible with function's {2} declared: {3} {4}".format(variable.type, node.line, args[0], argument.type, argument.name)
         #return variable.type
 
-    def visit_ExpressionList(self, node, tab, *args):
+    def visit_ExpressionList(self, node, tab):
         expressions = node.expressions
         return map(lambda expression: self.dispatch(expression, tab), expressions)
         #for expression in node.expressions:
