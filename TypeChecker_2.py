@@ -146,6 +146,8 @@ class TypeChecker(object):
             print "line {1}: Symbol {0} not defined before".format(node.id, node.line)
         else:
             valueType = self.dispatch(node.expression, tab)
+            if valueType == None:
+                return None
             if not ttype["="][variable.type].has_key(valueType):
                 #print variable.name, variable.type
                 print "line {3}: Value of type {0} cannot be assigned to symbol {1} of type {2}".format(valueType, node.id, variable.type, node.line)
@@ -258,6 +260,8 @@ class TypeChecker(object):
             return None
         for argumentSymbol in declared_fun_args.values():
             corresponding_funcall_argtype = funcall_argtypes[argumentSymbol.position]
+            if corresponding_funcall_argtype == None:
+                continue
             if not ttype['='][argumentSymbol.type].has_key(corresponding_funcall_argtype):
                 print "line {4}: Function {0}, argument {1}: cannot convert actual argument type " \
                         "({2}) to required type ({3})".format( \

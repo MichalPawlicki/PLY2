@@ -17,5 +17,7 @@ if __name__ == '__main__':
     parser = yacc.yacc(module=Cparser)
     text = file.read()
     ast = parser.parse(text, lexer=Cparser.scanner)
+    if ast == None:
+        sys.exit(-1)
     ast.printTree(0)
     TypeChecker().dispatch(ast)

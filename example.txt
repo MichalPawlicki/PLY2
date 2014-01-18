@@ -14,7 +14,7 @@ int gcd(int m, float n) {
         d = 6;
         d = 4.234234;
         d = gcd("aaa", "bbb");
-        d = a(5);
+        d = res(5);
 	if (m!=n) { 
 	    if (m > n) 
 	        res = gcd(foo(5, "ala"), 5.0, 4);
